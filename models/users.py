@@ -14,6 +14,8 @@ class User(db.Entity):
     careerID = Required(Careers)
     rolID= Required(Rols)
     createdAt = Required(datetime.datetime,default=datetime.datetime.now)
+    events = Set('Events')
+    
     
     
     

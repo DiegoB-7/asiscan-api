@@ -61,7 +61,7 @@ def sign_up(user:users_schema.user_in) :
     )
     user.flush() 
     user_id = int(user.ID)
-    print(user_id)
+    
     return   {
         "access_token": auth_module.generate_token(user_id),
         "token_type": "bearer"
@@ -70,7 +70,19 @@ def sign_up(user:users_schema.user_in) :
 @router.get("/me",status_code=status.HTTP_200_OK)
 @db_session
 def me(current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
-    return current_user
+    data = {}
+    user = User.get(ID=current_user)
+    
+    for key in user.to_dict():
+        if key != "password":
+            if(key == "rolID"):
+                data["rol"] = user.rolID.name
+            elif(key == "careerID"):
+                data["career"] = user.careerID.name
+            else:
+                data[key] = user.to_dict()[key]
+
+    return data
 
 @router.delete("/delete/{id}",status_code=status.HTTP_200_OK)
 @db_session
