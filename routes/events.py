@@ -49,4 +49,27 @@ def get_events(current_user: Annotated[str, Depends(auth_module.get_current_user
     
     return data
 
+@router.get("/{id}")
+@db_session
+def get_events(id:int):
+    event = Events.get(ID=id)
+    
+    students_assist = []
+    for event_student in event.events_students:
+        students_assist.append({
+            "student": event_student.student.firstName + " " + event_student.student.middleName + " " + event_student.student.lastName,
+            "quantity_assist": event_student.quantity_assist,
+            "createdAt": datetime.datetime.strftime(event_student.createdAt, "%d/%m/%Y"),
+            "career": event_student.student.careerID.name
+        })
+        
+    return {
+        "event":{
+            "name": event.name,
+            "user": event.user.firstName + " " + event.user.middleName + " " + event.user.lastName,
+            "createdAt": datetime.datetime.strftime(event.createdAt, "%d/%m/%Y")
+        },
+        "sudents_assist": students_assist
+    }
+
 

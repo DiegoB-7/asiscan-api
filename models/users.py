@@ -15,7 +15,7 @@ class User(db.Entity):
     rolID= Required(Rols)
     createdAt = Required(datetime.datetime,default=datetime.datetime.now)
     events = Set('Events')
-    
+    events_students = Set('EventsStudents') 
     
     
     

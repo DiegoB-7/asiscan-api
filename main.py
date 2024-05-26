@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 from routes import (
     users_router,
     careers_router,
-    events_router
+    events_router,
+    students_router
 )
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -28,6 +29,7 @@ app.add_middleware(
 app.include_router(users_router)
 app.include_router(careers_router)
 app.include_router(events_router)
+app.include_router(students_router) 
 
 
 
