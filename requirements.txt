@@ -8,6 +8,7 @@ click==8.1.7
 cryptography==42.0.5
 dnspython==2.6.1
 email_validator==2.1.1
+et-xmlfile==1.1.0
 exceptiongroup==1.2.0
 fastapi==0.110.1
 h11==0.14.0
@@ -15,6 +16,7 @@ idna==3.6
 Jinja2==3.1.4
 MarkupSafe==2.1.5
 mysql-connector-python==8.3.0
+openpyxl==3.1.2
 pdfkit==1.0.0
 pony==0.7.17
 pycparser==2.22

@@ -4,7 +4,7 @@ from typing_extensions import Annotated
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 import datetime
-from models import (Events,Students,EventsStudents)
+from models import (Events,Students,EventsStudents,User)
 from schemas import (
     events as events_schema
 )
@@ -57,3 +57,24 @@ def get_student_info(url:str,eventID:int,current_user: Annotated[str, Depends(au
         commit()
             
     return student_data
+
+@router.get("",status_code=status.HTTP_200_OK)
+@db_session
+def get_students(current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
+    user = User.get(ID=current_user)
+    data = []
+    careerID = user.careerID
+    print(careerID)
+    students = Students.select(lambda s: s.careerID == careerID)
+    
+    for student in students:
+        data.append({
+            "ID": student.ID,
+            "firstName": student.firstName,
+            "middleName": student.middleName,
+            "lastName": student.lastName,
+            "controlNumber": student.controlNumber,
+            "career": student.careerID.name
+        })
+    
+    return data
