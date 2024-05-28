@@ -5,7 +5,7 @@ from typing_extensions import Annotated
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import datetime
 from openpyxl import Workbook
-from models import (Events,User)
+from models import (Events,User,EventsStudents)
 from schemas import (
     events as events_schema
 )
@@ -77,6 +77,18 @@ def get_events(id:int):
         "students_assist": students_assist
     }
 
+@router.get("/assist/{id}",status_code=status.HTTP_200_OK)
+@db_session
+def get_students_assist(id:int):
+    event_student = EventsStudents.get(ID=id)
+    return {
+        "student": event_student.student.firstName + " " + event_student.student.middleName + " " + event_student.student.lastName,
+        "control_number": event_student.student.controlNumber,
+        "quantity_assist": event_student.quantity_assist,
+        "career": event_student.student.careerID.name,
+        "user":event_student.user_id.firstName + " " + event_student.user_id.middleName + " " + event_student.user_id.lastName,
+    }
+   
 @router.delete("/{id}")
 @db_session
 def delete_event(id:int):
@@ -104,6 +116,27 @@ def get_event_detail(id:int):
     event = Events.get(ID=id)
     return {
         "event": event.name
+    }
+
+@router.put("/assist/{id}/{quantity_assist_update}",status_code=status.HTTP_200_OK)
+@db_session
+def update_assist(id:int,quantity_assist_update:int):
+    event_student = EventsStudents.get(ID=id)
+    event_student.quantity_assist = quantity_assist_update
+    commit()
+    
+    return {
+        "message": "Assist updated"
+    }
+    
+@router.delete("/assist/{id}")
+@db_session
+def delete_assist(id:int):
+    event_student = EventsStudents.get(ID=id)
+    event_student.delete()
+    commit()
+    return {
+        "message": "Assist deleted"
     }
     
 @router.get("/download_report/{id}/{quantity}",status_code=status.HTTP_200_OK)
