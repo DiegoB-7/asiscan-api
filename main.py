@@ -6,7 +6,8 @@ from routes import (
     users_router,
     careers_router,
     events_router,
-    students_router
+    students_router,
+    rols_router
 )
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -30,6 +31,7 @@ app.include_router(users_router)
 app.include_router(careers_router)
 app.include_router(events_router)
 app.include_router(students_router) 
+app.include_router(rols_router)
 
 
 

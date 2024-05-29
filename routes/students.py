@@ -57,6 +57,55 @@ def get_student_info(url:str,eventID:int,current_user: Annotated[str, Depends(au
             
     return student_data
 
+@router.get("/{studentID}",status_code=status.HTTP_200_OK)
+@db_session
+def get_student(studentID:int,current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
+    student = Students.get(ID=studentID)
+    
+    if student is None:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    return {
+        "ID": student.ID,
+        "firstName": student.firstName,
+        "middleName": student.middleName,
+        "lastName": student.lastName,
+        "controlNumber": student.controlNumber,
+        "career": student.careerID.ID,
+        "email": student.email if student.email is not None else ""
+    }
+    
+@router.delete("/{studentID}",status_code=status.HTTP_200_OK)
+@db_session
+def delete_student(studentID:int,current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
+    student = Students.get(ID=studentID)
+    if student is None:
+        raise HTTPException(status_code=404, detail="Student not found")
+    student.delete()
+    commit()
+    return {"message":"Student deleted"}
+
+@router.put("/{studentID}",status_code=status.HTTP_200_OK)
+@db_session
+def update_student(studentID:int,student:students_schema.student_in,current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
+    student_update = Students.get(ID=studentID)
+    if student is None:
+        raise HTTPException(status_code=404, detail="Student not found")
+    print(f"firstName: {student.firstName} middleName: {student.middleName} lastName: {student.lastName} email: {student.email} controlNumber: {student.controlNumber} careerID: {student.careerID}")
+    student_update.set(
+        firstName=student.firstName,
+        middleName=student.middleName,
+        lastName=student.lastName,
+        email=student.email,
+        controlNumber=student.controlNumber,
+        careerID=student.careerID
+    )
+    commit()
+    
+    return {
+       "message":"Student updated",
+    }
+    
 @router.post("/create",status_code=status.HTTP_201_CREATED)
 @db_session
 def create_student(student:students_schema.student_in):
@@ -89,16 +138,15 @@ def get_students(current_user: Annotated[str, Depends(auth_module.get_current_us
     data = []
     careerID = user.careerID
     print(careerID)
-    students = Students.select(lambda s: s.careerID == careerID)
+    students = Students.select()
     
     for student in students:
         data.append({
             "ID": student.ID,
-            "firstName": student.firstName,
-            "middleName": student.middleName,
-            "lastName": student.lastName,
+            "name": f"{student.firstName} {student.middleName} {student.lastName}",
             "controlNumber": student.controlNumber,
-            "career": student.careerID.name
+            "career": student.careerID.name,
+            "email": student.email if student.email is not None else ""
         })
     
     return data

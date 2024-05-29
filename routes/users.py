@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status,Depends
 from typing import Any, List, Union
 from typing_extensions import Annotated
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-
+import datetime
 from models import (User)
 from schemas import (
     users as users_schema
@@ -67,9 +67,107 @@ def sign_up(user:users_schema.user_in) :
         "token_type": "bearer"
     }
 
+@router.get("/{id:int}",status_code=status.HTTP_200_OK)
+@db_session
+def get_user(id:int,current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
+    user = User.get(ID=id)
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    data = {}
+    for key in user.to_dict():
+        if key != "password":
+            if(key == "rolID"):
+                data["rolID"] = user.rolID.ID
+            elif(key == "careerID"):
+                data["careerID"] = user.careerID.ID
+            else:
+                data[key] = user.to_dict()[key]
+    return data
+
+@router.get("",status_code=status.HTTP_200_OK)
+@db_session
+def get_all_users(current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
+    users = User.select()
+    data = []
+    for user in users:
+        data.append({
+            "ID": user.ID,
+            "name": user.firstName + " " + user.middleName + " " + user.lastName,
+            "career": user.careerID.name,
+            "rol": user.rolID.name,
+            "email": user.email,
+            "createdAt": datetime.datetime.strftime(user.createdAt, "%d/%m/%Y")
+        })
+    return data
+
+@router.delete("/{id}",status_code=status.HTTP_200_OK)
+@db_session
+def delete_user(id:int,current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
+    user_check = User.get(ID=id)
+    
+    if not user_check:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+        
+    if id == current_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You can't delete yourself",
+        )
+        
+    user = User[id]
+    user.delete()
+    commit()
+    return {"message":"User deleted"}
+
+@router.put("/{id}",status_code=status.HTTP_200_OK)
+@db_session
+def update_user(id:int,user:users_schema.user_in_update, current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
+    user_check = User.get(ID=id)
+
+    if not user_check:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+        
+    user_database = User[id]
+   
+    if user.password:
+        user_database.set(
+            firstName=user.firstName,
+            middleName=user.middleName,
+            lastName=user.lastName,
+            careerID=user.careerID,
+            rolID=user.rolID,
+            email=user.email,
+            password=auth_module.hash_password(user.password),
+           
+        )
+    else:
+        user_database.set(
+            firstName=user.firstName,
+            middleName=user.middleName,
+            lastName=user.lastName,
+            careerID=user.careerID,
+            rolID=user.rolID,
+            email=user.email,
+            
+        )
+    
+    commit()
+   
+    return {"message":"User updated"}
+
 @router.get("/me",status_code=status.HTTP_200_OK)
 @db_session
-def me(current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
+def get_profile_information(current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
     data = {}
     user = User.get(ID=current_user)
     
