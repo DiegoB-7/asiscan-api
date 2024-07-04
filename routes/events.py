@@ -26,7 +26,7 @@ def create_event(event:events_schema.event_in,current_user: Annotated[str, Depen
         name=event.name,
         user=current_user
     )
-    
+
     return {
         "event": event.name,
     }
@@ -37,25 +37,33 @@ def get_events(current_user: Annotated[str, Depends(auth_module.get_current_user
     user = User.get(ID=current_user)
     data = []
     careerID = user.careerID
-    
-    users_by_career_id = User.select(lambda u: u.careerID == careerID)
-    
-    for user in users_by_career_id:
-        for event in user.events:
-            data.append({
-                "ID": event.ID,
-                "name": event.name,
-                "user": event.user.firstName + " " + event.user.middleName + " " + event.user.lastName,
-                "createdAt": datetime.datetime.strftime(event.createdAt, "%d/%m/%Y")
-            })
-    
+
+    # users_by_career_id = User.select(lambda u: u.careerID == careerID)
+    ##get te events created by the user
+    for event in user.events:
+        data.append({
+            "ID": event.ID,
+            "name": event.name,
+            "user": event.user.firstName + " " + event.user.middleName + " " + event.user.lastName,
+            "createdAt": datetime.datetime.strftime(event.createdAt, "%d/%m/%Y")
+        })
+
+    # for user in users_by_career_id:
+    #     for event in user.events:
+    #         data.append({
+    #             "ID": event.ID,
+    #             "name": event.name,
+    #             "user": event.user.firstName + " " + event.user.middleName + " " + event.user.lastName,
+    #             "createdAt": datetime.datetime.strftime(event.createdAt, "%d/%m/%Y")
+    #         })
+
     return data
 
 @router.get("/{id}",status_code=status.HTTP_200_OK)
 @db_session
 def get_events(id:int):
     event = Events.get(ID=id)
-    
+
     students_assist = []
     for event_student in event.events_students:
         students_assist.append({
@@ -67,7 +75,7 @@ def get_events(id:int):
             "createdAt": datetime.datetime.strftime(event_student.createdAt, "%d/%m/%Y %H:%M:%S"),
             "career": event_student.student.careerID.name
         })
-        
+
     return {
         "event":{
             "name": event.name,
@@ -88,7 +96,7 @@ def get_students_assist(id:int):
         "career": event_student.student.careerID.name,
         "user":event_student.user_id.firstName + " " + event_student.user_id.middleName + " " + event_student.user_id.lastName,
     }
-   
+
 @router.delete("/{id}")
 @db_session
 def delete_event(id:int):
@@ -120,15 +128,16 @@ def get_event_detail(id:int):
 
 @router.put("/assist/{id}/{quantity_assist_update}",status_code=status.HTTP_200_OK)
 @db_session
-def update_assist(id:int,quantity_assist_update:int):
+def update_assist(id:int, quantity_assist_update:int):
     event_student = EventsStudents.get(ID=id)
+    print(event_student)
     event_student.quantity_assist = quantity_assist_update
     commit()
-    
+
     return {
         "message": "Assist updated"
     }
-    
+
 @router.delete("/assist/{id}")
 @db_session
 def delete_assist(id:int):
@@ -138,21 +147,21 @@ def delete_assist(id:int):
     return {
         "message": "Assist deleted"
     }
-    
+
 @router.get("/download_report/{id}/{quantity}",status_code=status.HTTP_200_OK)
 @db_session
 def download_report(id:int,quantity:int):
     event = Events.get(ID=id)
     wb = Workbook()
     ws = wb.active
-    ws.title = f"Lista de asistencia {event.name}" 
+    ws.title = f"Lista de asistencia {event.name}"
     ws['A1'] = "Nombre"
     ws['B1'] = "No. de control"
     ws['C1'] = "Carrera"
     ws['D1'] = "Fecha de asistencia"
     ws['E1'] = "Cantidad de asistencias"
     ws['F1'] = "Usuario quien registro"
-    
+
     row = 2
     for event_student in event.events_students:
        if event_student.quantity_assist >= quantity:
@@ -163,6 +172,6 @@ def download_report(id:int,quantity:int):
            ws[f"E{row}"] = event_student.quantity_assist
            ws[f"F{row}"] = event_student.user_id.firstName + " " + event_student.user_id.middleName + " " + event_student.user_id.lastName
            row += 1
-    
+
     wb.save("tmp/report.xlsx")
     return FileResponse("tmp/report.xlsx", filename=f"Lista de asistencia {event.name}.xlsx")
