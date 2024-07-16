@@ -17,6 +17,15 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+##is users table empty?
+@router.get("/is_empty",status_code=status.HTTP_200_OK)
+@db_session
+def is_empty():
+    users = User.select()
+    if len(users) == 0:
+        return True
+    return False
+
 @router.post("/sign_in",status_code=status.HTTP_200_OK)
 @db_session
 def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
@@ -32,23 +41,23 @@ def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
             detail="Incorrect password",
         )
     user_id = int(check_user.ID)
-    
+
     return {
         "access_token": auth_module.generate_token(user_id),
         "token_type": "bearer"
     }
-    
+
 @router.post("/sign_up",status_code=status.HTTP_201_CREATED)
 @db_session
 def sign_up(user:users_schema.user_in) :
     check_user = User.get(email=user.email)
-    
+
     if check_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
-    
+
     user =  User(
         firstName=user.firstName,
         middleName=user.middleName,
@@ -57,11 +66,11 @@ def sign_up(user:users_schema.user_in) :
         rolID=2,
         email=user.email,
         password=auth_module.hash_password(user.password),
-        
+
     )
-    user.flush() 
+    user.flush()
     user_id = int(user.ID)
-    
+
     return   {
         "access_token": auth_module.generate_token(user_id),
         "token_type": "bearer"
@@ -71,7 +80,7 @@ def sign_up(user:users_schema.user_in) :
 @db_session
 def get_user(id:int,current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
     user = User.get(ID=id)
-    
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -108,19 +117,19 @@ def get_all_users(current_user: Annotated[str, Depends(auth_module.get_current_u
 @db_session
 def delete_user(id:int,current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
     user_check = User.get(ID=id)
-    
+
     if not user_check:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-        
+
     if id == current_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You can't delete yourself",
         )
-        
+
     user = User[id]
     user.delete()
     commit()
@@ -136,9 +145,9 @@ def update_user(id:int,user:users_schema.user_in_update, current_user: Annotated
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-        
+
     user_database = User[id]
-   
+
     if user.password:
         user_database.set(
             firstName=user.firstName,
@@ -148,7 +157,7 @@ def update_user(id:int,user:users_schema.user_in_update, current_user: Annotated
             rolID=user.rolID,
             email=user.email,
             password=auth_module.hash_password(user.password),
-           
+
         )
     else:
         user_database.set(
@@ -158,11 +167,11 @@ def update_user(id:int,user:users_schema.user_in_update, current_user: Annotated
             careerID=user.careerID,
             rolID=user.rolID,
             email=user.email,
-            
+
         )
-    
+
     commit()
-   
+
     return {"message":"User updated"}
 
 @router.get("/me",status_code=status.HTTP_200_OK)
@@ -170,7 +179,7 @@ def update_user(id:int,user:users_schema.user_in_update, current_user: Annotated
 def get_profile_information(current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
     data = {}
     user = User.get(ID=current_user)
-    
+
     for key in user.to_dict():
         if key != "password":
             if(key == "rolID"):
@@ -186,7 +195,7 @@ def get_profile_information(current_user: Annotated[str, Depends(auth_module.get
 @db_session
 def delete_user(id:int,current_user: Annotated[str, Depends(auth_module.get_current_user_id)]):
     user_check = User.get(ID=id)
-    
+
     if not user_check:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -207,9 +216,9 @@ def edit_user(id:int,user:users_schema.user_in, current_user: Annotated[str, Dep
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-        
+
     user_database = User[id]
-   
+
     user_database.set(
         firstName=user.firstName,
         middleName=user.middleName,
@@ -220,7 +229,7 @@ def edit_user(id:int,user:users_schema.user_in, current_user: Annotated[str, Dep
         password=auth_module.hash_password(user.password),
         avatar=user.avatar
     )
-    
+
     commit()
-   
+
     return {"message":"User updated"}
