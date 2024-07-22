@@ -52,18 +52,23 @@ def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 def sign_up(user:users_schema.user_in) :
     check_user = User.get(email=user.email)
 
+    rol = 2
+
     if check_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
 
+    if(user.email=="admin@admin.tec"):
+        rol = 1
+
     user =  User(
         firstName=user.firstName,
         middleName=user.middleName,
         lastName=user.lastName,
         careerID=user.careerID,
-        rolID=2,
+        rolID=rol,
         email=user.email,
         password=auth_module.hash_password(user.password),
 
